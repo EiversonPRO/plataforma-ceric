@@ -16,6 +16,15 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
+function isNavItemActive(pathname: string, href: string): boolean {
+  // Exact match for dashboard roots, prefix match for nested routes
+  const exactMatchRoutes = ['/admin', '/dashboard/acudiente', '/dashboard/docente-colegio']
+  if (exactMatchRoutes.includes(href)) {
+    return pathname === href
+  }
+  return pathname.startsWith(href)
+}
+
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/estudiantes', label: 'Estudiantes', icon: Users },
@@ -62,7 +71,7 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 space-y-1">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || (href !== '/admin' && href !== '/dashboard/acudiente' && href !== '/dashboard/docente-colegio' && pathname.startsWith(href))
+          const isActive = isNavItemActive(pathname, href)
           return (
             <Link
               key={href}
