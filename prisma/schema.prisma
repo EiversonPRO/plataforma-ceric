@@ -1,0 +1,338 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String    @id @default(cuid())
+  name                  String
+  email                 String    @unique
+  passwordHash          String
+  role                  Role
+  status                UserStatus @default(PENDING_ACTIVATION)
+  forcePasswordChange   Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  teacherSchoolProfile  TeacherSchoolProfile?
+  guardianProfile       GuardianProfile?
+  sentMessages          Message[]             @relation("SentMessages")
+  conversations         ConversationParticipant[]
+  notifications         Notification[]
+  passwordResetTokens   PasswordResetToken[]
+  loginAttempts         LoginAttempt[]
+  observationsCreated   Observation[]         @relation("ObservationsCreated")
+  observationActions    ObservationAction[]
+  observationFollowups  ObservationFollowup[]
+  progressReports       ProgressReport[]
+  studentStatusChanges  StudentStatusHistory[]
+}
+
+enum Role {
+  TEACHER_PLATFORM
+  TEACHER_SCHOOL
+  GUARDIAN
+}
+
+enum UserStatus {
+  PENDING_ACTIVATION
+  ACTIVE
+  INACTIVE
+}
+
+model School {
+  id             String    @id @default(cuid())
+  name           String
+  address        String
+  phone          String
+  contactEmail   String
+  createdAt      DateTime  @default(now())
+
+  teacherProfiles TeacherSchoolProfile[]
+  students        Student[]
+}
+
+model TeacherSchoolProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  schoolId    String
+  subjectArea String
+
+  user        User    @relation(fields: [userId], references: [id])
+  school      School  @relation(fields: [schoolId], references: [id])
+}
+
+model GuardianProfile {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  docType                 String
+  docNumber               String
+  phone                   String
+  address                 String
+  relationship            String
+  hasEmail                Boolean   @default(true)
+  dataConsent             Boolean   @default(false)
+  dataConsentDate         DateTime?
+  dataConsentRegisteredBy String?
+
+  user                    User      @relation(fields: [userId], references: [id])
+  studentGuardians        StudentGuardian[]
+}
+
+model Student {
+  id             String         @id @default(cuid())
+  name           String
+  birthDate      DateTime
+  grade          String
+  schoolId       String
+  gender         String
+  specialNotes   String?
+  status         StudentStatus  @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+
+  school         School         @relation(fields: [schoolId], references: [id])
+  guardians      StudentGuardian[]
+  enrollments    Enrollment[]
+  attendance     Attendance[]
+  progressReports ProgressReport[]
+  observations   Observation[]
+  statusHistory  StudentStatusHistory[]
+}
+
+enum StudentStatus {
+  ACTIVE
+  FOLLOW_UP
+  AT_RISK
+  INACTIVE
+}
+
+model StudentStatusHistory {
+  id             String        @id @default(cuid())
+  studentId      String
+  previousStatus StudentStatus
+  newStatus      StudentStatus
+  note           String
+  changedBy      String
+  changedAt      DateTime      @default(now())
+
+  student        Student       @relation(fields: [studentId], references: [id])
+  user           User          @relation(fields: [changedBy], references: [id])
+}
+
+model StudentGuardian {
+  studentId       String
+  guardianId      String
+  isPrimary       Boolean @default(false)
+
+  student         Student         @relation(fields: [studentId], references: [id])
+  guardian        GuardianProfile @relation(fields: [guardianId], references: [id])
+
+  @@id([studentId, guardianId])
+}
+
+model Workshop {
+  id           String          @id @default(cuid())
+  name         String
+  description  String
+  schedule     String
+  teacherId    String
+  maxCapacity  Int
+  status       WorkshopStatus  @default(ACTIVE)
+  ageGroup     String
+  createdAt    DateTime        @default(now())
+
+  enrollments  Enrollment[]
+  attendance   Attendance[]
+}
+
+enum WorkshopStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Enrollment {
+  studentId    String
+  workshopId   String
+  enrolledAt   DateTime @default(now())
+
+  student      Student  @relation(fields: [studentId], references: [id])
+  workshop     Workshop @relation(fields: [workshopId], references: [id])
+
+  @@id([studentId, workshopId])
+}
+
+model Attendance {
+  id          String           @id @default(cuid())
+  studentId   String
+  workshopId  String
+  date        DateTime
+  status      AttendanceStatus
+
+  student     Student          @relation(fields: [studentId], references: [id])
+  workshop    Workshop         @relation(fields: [workshopId], references: [id])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+model ProgressReport {
+  id          String          @id @default(cuid())
+  studentId   String
+  workshopId  String
+  period      String
+  rating      ProgressRating
+  notes       String
+  createdBy   String
+  createdAt   DateTime        @default(now())
+
+  student     Student         @relation(fields: [studentId], references: [id])
+  creator     User            @relation(fields: [createdBy], references: [id])
+}
+
+enum ProgressRating {
+  EXCELLENT
+  GOOD
+  IN_PROGRESS
+  NEEDS_SUPPORT
+}
+
+model Observation {
+  id             String            @id @default(cuid())
+  studentId      String
+  createdBy      String
+  subjectArea    String
+  difficultyType String
+  description    String
+  urgencyLevel   UrgencyLevel
+  recommendation String?
+  status         ObservationStatus @default(PENDING)
+  createdAt      DateTime          @default(now())
+
+  student        Student           @relation(fields: [studentId], references: [id])
+  creator        User              @relation("ObservationsCreated", fields: [createdBy], references: [id])
+  actions        ObservationAction[]
+  followups      ObservationFollowup[]
+}
+
+enum UrgencyLevel {
+  NORMAL
+  PRIORITY
+  URGENT
+}
+
+enum ObservationStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+}
+
+model ObservationAction {
+  id            String      @id @default(cuid())
+  observationId String
+  createdBy     String
+  actionPlan    String
+  createdAt     DateTime    @default(now())
+
+  observation   Observation @relation(fields: [observationId], references: [id])
+  creator       User        @relation(fields: [createdBy], references: [id])
+}
+
+model ObservationFollowup {
+  id            String      @id @default(cuid())
+  observationId String
+  createdBy     String
+  note          String
+  createdAt     DateTime    @default(now())
+
+  observation   Observation @relation(fields: [observationId], references: [id])
+  creator       User        @relation(fields: [createdBy], references: [id])
+}
+
+model Conversation {
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  conversationId String
+  userId         String
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@id([conversationId, userId])
+}
+
+model Message {
+  id             String    @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  sentAt         DateTime  @default(now())
+  readAt         DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id])
+}
+
+enum NotificationType {
+  NEW_MESSAGE
+  REPORT_AVAILABLE
+  ABSENCE_REGISTERED
+  OBSERVATION_CREATED
+  OBSERVATION_ACTION
+  OBSERVATION_RESOLVED
+  MANUAL_NOTIFICATION_PENDING
+  ACCOUNT_CREATED
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  email       String
+  ipAddress   String
+  success     Boolean
+  attemptedAt DateTime @default(now())
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model SiteConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedBy String
+  updatedAt DateTime @updatedAt
+}
