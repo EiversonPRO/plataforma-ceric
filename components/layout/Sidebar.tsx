@@ -17,12 +17,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 function isNavItemActive(pathname: string, href: string): boolean {
-  // Exact match for dashboard roots, prefix match for nested routes
-  const exactMatchRoutes = ['/admin', '/dashboard/acudiente', '/dashboard/docente-colegio']
-  if (exactMatchRoutes.includes(href)) {
-    return pathname === href
-  }
-  return pathname.startsWith(href)
+  if (pathname === href) return true
+  // Prefix match only when followed by a path separator to avoid false positives
+  return pathname.startsWith(href + '/')
 }
 
 const adminNavItems = [
