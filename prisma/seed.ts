@@ -1,363 +1,727 @@
-import { PrismaClient, Role, UserStatus, StudentStatus, WorkshopStatus, AttendanceStatus, ProgressRating, UrgencyLevel, ObservationStatus, NotificationType } from '@prisma/client'
+import {
+  PrismaClient,
+  Role,
+  UserStatus,
+  StudentStatus,
+  WorkshopStatus,
+  AttendanceStatus,
+  UrgencyLevel,
+  ObservationStatus,
+} from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Iniciando seed de la base de datos...')
+  console.log('🌱 Iniciando seed de la base de datos...')
 
-  // ─── Contraseña por defecto ───────────────────────────────────────────────
-  const defaultPasswordHash = await bcrypt.hash('Ceric2024*', 12)
+  // ─── Contraseñas ───────────────────────────────────────────────────────────
+  const adminPasswordHash = await bcrypt.hash('CERIC_Admin_2024!', 12)
+  const testPasswordHash = await bcrypt.hash('Test1234!', 12)
 
-  // ─── Docente Plataforma (Admin) ───────────────────────────────────────────
-  const teacherPlatform = await prisma.user.upsert({
+  // ─── Colegios ─────────────────────────────────────────────────────────────
+  const schoolKennedy = await prisma.school.upsert({
+    where: { id: 'school-kennedy' },
+    update: {},
+    create: {
+      id: 'school-kennedy',
+      name: 'IE Kennedy',
+      address: 'Barrio Kennedy Cantonera',
+      phone: '6044000001',
+      contactEmail: 'kennedy@edu.co',
+    },
+  })
+
+  const schoolCandelaria = await prisma.school.upsert({
+    where: { id: 'school-candelaria' },
+    update: {},
+    create: {
+      id: 'school-candelaria',
+      name: 'IE La Candelaria',
+      address: 'Barrio La Candelaria',
+      phone: '6044000002',
+      contactEmail: 'candelaria@edu.co',
+    },
+  })
+
+  const schoolSanJavier = await prisma.school.upsert({
+    where: { id: 'school-sanjavier' },
+    update: {},
+    create: {
+      id: 'school-sanjavier',
+      name: 'IE San Javier',
+      address: 'Barrio San Javier',
+      phone: '6044000003',
+      contactEmail: 'sanjavier@edu.co',
+    },
+  })
+
+  console.log(`✔ 3 colegios creados`)
+
+  // ─── Admin CERIC ───────────────────────────────────────────────────────────
+  const admin = await prisma.user.upsert({
     where: { email: 'admin@ceric.edu.co' },
     update: {},
     create: {
-      name: 'Administrador CERIC',
+      name: 'Admin CERIC',
       email: 'admin@ceric.edu.co',
-      passwordHash: defaultPasswordHash,
+      passwordHash: adminPasswordHash,
+      role: Role.TEACHER_PLATFORM,
+      status: UserStatus.ACTIVE,
+      forcePasswordChange: true,
+    },
+  })
+
+  // ─── Docentes Plataforma ───────────────────────────────────────────────────
+  const yovanny = await prisma.user.upsert({
+    where: { email: 'yovanny@ceric.edu.co' },
+    update: {},
+    create: {
+      name: 'Yovanny González',
+      email: 'yovanny@ceric.edu.co',
+      passwordHash: testPasswordHash,
       role: Role.TEACHER_PLATFORM,
       status: UserStatus.ACTIVE,
       forcePasswordChange: false,
     },
   })
-  console.log(`✔ Docente plataforma creado: ${teacherPlatform.email}`)
 
-  // ─── Colegio ──────────────────────────────────────────────────────────────
-  const school = await prisma.school.upsert({
-    where: { id: 'school-kennedy-001' },
+  const eiverson = await prisma.user.upsert({
+    where: { email: 'eiverson@ceric.edu.co' },
     update: {},
     create: {
-      id: 'school-kennedy-001',
-      name: 'Colegio Kennedy',
-      address: 'Cra. 80 #38-00, Bogotá',
-      phone: '601-4567890',
-      contactEmail: 'rector@kennedy.edu.co',
+      name: 'Eiverson Moreno',
+      email: 'eiverson@ceric.edu.co',
+      passwordHash: testPasswordHash,
+      role: Role.TEACHER_PLATFORM,
+      status: UserStatus.ACTIVE,
+      forcePasswordChange: false,
     },
   })
-  console.log(`✔ Colegio creado: ${school.name}`)
 
-  // ─── Docente Colegio ──────────────────────────────────────────────────────
-  const teacherSchool = await prisma.user.upsert({
-    where: { email: 'docente@kennedy.edu.co' },
+  console.log(`✔ 3 usuarios docentes plataforma creados`)
+
+  // ─── Docentes Colegio ──────────────────────────────────────────────────────
+  const carlosMartinez = await prisma.user.upsert({
+    where: { email: 'carlos@iekennedy.edu.co' },
     update: {},
     create: {
-      name: 'Carlos Ramírez',
-      email: 'docente@kennedy.edu.co',
-      passwordHash: defaultPasswordHash,
+      name: 'Carlos Martínez',
+      email: 'carlos@iekennedy.edu.co',
+      passwordHash: testPasswordHash,
       role: Role.TEACHER_SCHOOL,
       status: UserStatus.ACTIVE,
       forcePasswordChange: false,
       teacherSchoolProfile: {
         create: {
-          schoolId: school.id,
+          schoolId: schoolKennedy.id,
           subjectArea: 'Matemáticas',
         },
       },
     },
   })
-  console.log(`✔ Docente colegio creado: ${teacherSchool.email}`)
 
-  // ─── Acudiente ────────────────────────────────────────────────────────────
-  const guardian = await prisma.user.upsert({
-    where: { email: 'acudiente@example.com' },
+  const anaRuiz = await prisma.user.upsert({
+    where: { email: 'ana@iecandelaria.edu.co' },
+    update: {},
+    create: {
+      name: 'Ana Ruiz',
+      email: 'ana@iecandelaria.edu.co',
+      passwordHash: testPasswordHash,
+      role: Role.TEACHER_SCHOOL,
+      status: UserStatus.ACTIVE,
+      forcePasswordChange: false,
+      teacherSchoolProfile: {
+        create: {
+          schoolId: schoolCandelaria.id,
+          subjectArea: 'Español',
+        },
+      },
+    },
+  })
+
+  console.log(`✔ 2 docentes de colegio creados`)
+
+  // ─── Acudientes ───────────────────────────────────────────────────────────
+  const mariaLopez = await prisma.user.upsert({
+    where: { email: 'maria.lopez@gmail.com' },
     update: {},
     create: {
       name: 'María López',
-      email: 'acudiente@example.com',
-      passwordHash: defaultPasswordHash,
+      email: 'maria.lopez@gmail.com',
+      passwordHash: testPasswordHash,
       role: Role.GUARDIAN,
       status: UserStatus.ACTIVE,
       forcePasswordChange: false,
       guardianProfile: {
         create: {
           docType: 'CC',
-          docNumber: '52345678',
+          docNumber: '1234567890',
           phone: '3101234567',
-          address: 'Calle 38 Sur #80-15, Bogotá',
-          relationship: 'Madre',
+          address: 'Barrio Kennedy Cantonera, Calle 10 #20-30',
+          relationship: 'madre',
           hasEmail: true,
           dataConsent: true,
           dataConsentDate: new Date(),
-          dataConsentRegisteredBy: teacherPlatform.id,
+          dataConsentRegisteredBy: admin.id,
         },
       },
     },
     include: { guardianProfile: true },
   })
-  console.log(`✔ Acudiente creado: ${guardian.email}`)
 
-  // ─── Estudiantes ──────────────────────────────────────────────────────────
-  const student1 = await prisma.student.upsert({
-    where: { id: 'student-001' },
+  const pedroGomez = await prisma.user.upsert({
+    where: { email: 'pedro.gomez@gmail.com' },
     update: {},
     create: {
-      id: 'student-001',
+      name: 'Pedro Gómez',
+      email: 'pedro.gomez@gmail.com',
+      passwordHash: testPasswordHash,
+      role: Role.GUARDIAN,
+      status: UserStatus.ACTIVE,
+      forcePasswordChange: false,
+      guardianProfile: {
+        create: {
+          docType: 'CC',
+          docNumber: '0987654321',
+          phone: '3112345678',
+          address: 'Barrio Kennedy Cantonera, Cra 80 #38-15',
+          relationship: 'padre',
+          hasEmail: true,
+          dataConsent: true,
+          dataConsentDate: new Date(),
+          dataConsentRegisteredBy: admin.id,
+        },
+      },
+    },
+    include: { guardianProfile: true },
+  })
+
+  const luciaTorres = await prisma.user.upsert({
+    where: { email: 'lucia.torres@gmail.com' },
+    update: {},
+    create: {
+      name: 'Lucía Torres',
+      email: 'lucia.torres@gmail.com',
+      passwordHash: testPasswordHash,
+      role: Role.GUARDIAN,
+      status: UserStatus.ACTIVE,
+      forcePasswordChange: false,
+      guardianProfile: {
+        create: {
+          docType: 'CC',
+          docNumber: '1122334455',
+          phone: '3123456789',
+          address: 'Barrio Kennedy Cantonera, Calle 38 Sur #80-10',
+          relationship: 'madre',
+          hasEmail: true,
+          dataConsent: true,
+          dataConsentDate: new Date(),
+          dataConsentRegisteredBy: admin.id,
+        },
+      },
+    },
+    include: { guardianProfile: true },
+  })
+
+  const joseRamirez = await prisma.user.upsert({
+    where: { email: 'acudiente.5544332211@ceric.edu.co' },
+    update: {},
+    create: {
+      name: 'José Ramírez',
+      email: 'acudiente.5544332211@ceric.edu.co',
+      passwordHash: testPasswordHash,
+      role: Role.GUARDIAN,
+      status: UserStatus.ACTIVE,
+      forcePasswordChange: false,
+      guardianProfile: {
+        create: {
+          docType: 'CC',
+          docNumber: '5544332211',
+          phone: '3134567890',
+          address: 'Barrio San Javier, Calle 44 #100-20',
+          relationship: 'padre',
+          hasEmail: false,
+          dataConsent: true,
+          dataConsentDate: new Date(),
+          dataConsentRegisteredBy: admin.id,
+        },
+      },
+    },
+    include: { guardianProfile: true },
+  })
+
+  console.log(`✔ 4 acudientes creados`)
+
+  // ─── Estudiantes ──────────────────────────────────────────────────────────
+  const sofia = await prisma.student.upsert({
+    where: { id: 'student-sofia' },
+    update: {},
+    create: {
+      id: 'student-sofia',
       name: 'Sofía López',
-      birthDate: new Date('2015-03-12'),
-      grade: '3°',
-      schoolId: school.id,
-      gender: 'F',
+      birthDate: new Date('2014-03-15'),
+      grade: '4°',
+      schoolId: schoolKennedy.id,
+      gender: 'femenino',
       status: StudentStatus.ACTIVE,
     },
   })
 
-  const student2 = await prisma.student.upsert({
-    where: { id: 'student-002' },
+  const juan = await prisma.student.upsert({
+    where: { id: 'student-juan' },
     update: {},
     create: {
-      id: 'student-002',
-      name: 'Andrés Martínez',
-      birthDate: new Date('2013-07-22'),
+      id: 'student-juan',
+      name: 'Juan López',
+      birthDate: new Date('2016-07-22'),
+      grade: '2°',
+      schoolId: schoolKennedy.id,
+      gender: 'masculino',
+      status: StudentStatus.ACTIVE,
+    },
+  })
+
+  const valentina = await prisma.student.upsert({
+    where: { id: 'student-valentina' },
+    update: {},
+    create: {
+      id: 'student-valentina',
+      name: 'Valentina Gómez',
+      birthDate: new Date('2012-11-08'),
+      grade: '6°',
+      schoolId: schoolCandelaria.id,
+      gender: 'femenino',
+      status: StudentStatus.ACTIVE,
+    },
+  })
+
+  const miguel = await prisma.student.upsert({
+    where: { id: 'student-miguel' },
+    update: {},
+    create: {
+      id: 'student-miguel',
+      name: 'Miguel Torres',
+      birthDate: new Date('2013-05-30'),
       grade: '5°',
-      schoolId: school.id,
-      gender: 'M',
-      status: StudentStatus.FOLLOW_UP,
-      specialNotes: 'Requiere apoyo en comprensión lectora',
+      schoolId: schoolKennedy.id,
+      gender: 'masculino',
+      status: StudentStatus.ACTIVE,
     },
   })
 
-  const student3 = await prisma.student.upsert({
-    where: { id: 'student-003' },
+  const camila = await prisma.student.upsert({
+    where: { id: 'student-camila' },
     update: {},
     create: {
-      id: 'student-003',
-      name: 'Valentina Torres',
-      birthDate: new Date('2014-11-05'),
-      grade: '4°',
-      schoolId: school.id,
-      gender: 'F',
-      status: StudentStatus.AT_RISK,
-      specialNotes: 'Alta inasistencia escolar',
+      id: 'student-camila',
+      name: 'Camila Ramírez',
+      birthDate: new Date('2015-09-12'),
+      grade: '3°',
+      schoolId: schoolSanJavier.id,
+      gender: 'femenino',
+      status: StudentStatus.ACTIVE,
     },
   })
-  console.log(`✔ Estudiantes creados: ${student1.name}, ${student2.name}, ${student3.name}`)
 
-  // ─── Relación acudiente - estudiantes ────────────────────────────────────
-  const guardianProfile = guardian.guardianProfile!
-  await prisma.studentGuardian.upsert({
-    where: { studentId_guardianId: { studentId: student1.id, guardianId: guardianProfile.id } },
+  const andres = await prisma.student.upsert({
+    where: { id: 'student-andres' },
     update: {},
-    create: { studentId: student1.id, guardianId: guardianProfile.id, isPrimary: true },
+    create: {
+      id: 'student-andres',
+      name: 'Andrés Ramírez',
+      birthDate: new Date('2017-01-25'),
+      grade: '1°',
+      schoolId: schoolSanJavier.id,
+      gender: 'masculino',
+      status: StudentStatus.FOLLOW_UP,
+    },
+  })
+
+  console.log(`✔ 6 estudiantes creados`)
+
+  // ─── Relaciones acudiente-estudiante ──────────────────────────────────────
+  const mariaProfile = mariaLopez.guardianProfile!
+  const pedroProfile = pedroGomez.guardianProfile!
+  const luciaProfile = luciaTorres.guardianProfile!
+  const joseProfile = joseRamirez.guardianProfile!
+
+  await prisma.studentGuardian.upsert({
+    where: { studentId_guardianId: { studentId: sofia.id, guardianId: mariaProfile.id } },
+    update: {},
+    create: { studentId: sofia.id, guardianId: mariaProfile.id, isPrimary: true },
   })
   await prisma.studentGuardian.upsert({
-    where: { studentId_guardianId: { studentId: student2.id, guardianId: guardianProfile.id } },
+    where: { studentId_guardianId: { studentId: juan.id, guardianId: mariaProfile.id } },
     update: {},
-    create: { studentId: student2.id, guardianId: guardianProfile.id, isPrimary: false },
+    create: { studentId: juan.id, guardianId: mariaProfile.id, isPrimary: true },
   })
+  await prisma.studentGuardian.upsert({
+    where: { studentId_guardianId: { studentId: valentina.id, guardianId: pedroProfile.id } },
+    update: {},
+    create: { studentId: valentina.id, guardianId: pedroProfile.id, isPrimary: true },
+  })
+  await prisma.studentGuardian.upsert({
+    where: { studentId_guardianId: { studentId: miguel.id, guardianId: luciaProfile.id } },
+    update: {},
+    create: { studentId: miguel.id, guardianId: luciaProfile.id, isPrimary: true },
+  })
+  await prisma.studentGuardian.upsert({
+    where: { studentId_guardianId: { studentId: camila.id, guardianId: joseProfile.id } },
+    update: {},
+    create: { studentId: camila.id, guardianId: joseProfile.id, isPrimary: true },
+  })
+  await prisma.studentGuardian.upsert({
+    where: { studentId_guardianId: { studentId: andres.id, guardianId: joseProfile.id } },
+    update: {},
+    create: { studentId: andres.id, guardianId: joseProfile.id, isPrimary: true },
+  })
+
   console.log(`✔ Relaciones acudiente-estudiante creadas`)
 
   // ─── Talleres ─────────────────────────────────────────────────────────────
-  const workshop1 = await prisma.workshop.upsert({
-    where: { id: 'workshop-001' },
+  const workshopMatematicas = await prisma.workshop.upsert({
+    where: { id: 'workshop-matematicas' },
     update: {},
     create: {
-      id: 'workshop-001',
-      name: 'Taller de Lectura',
-      description: 'Fortalecimiento de habilidades lectoras y comprensión de textos',
-      schedule: 'Lunes y Miércoles 2:00 PM - 4:00 PM',
-      teacherId: teacherPlatform.id,
-      maxCapacity: 20,
-      status: WorkshopStatus.ACTIVE,
-      ageGroup: '7-10 años',
-    },
-  })
-
-  const workshop2 = await prisma.workshop.upsert({
-    where: { id: 'workshop-002' },
-    update: {},
-    create: {
-      id: 'workshop-002',
-      name: 'Taller de Matemáticas',
-      description: 'Nivelación y refuerzo en operaciones matemáticas básicas',
-      schedule: 'Martes y Jueves 2:00 PM - 4:00 PM',
-      teacherId: teacherPlatform.id,
+      id: 'workshop-matematicas',
+      name: 'Refuerzo Matemáticas',
+      description: 'Nivelación y refuerzo en operaciones matemáticas para estudiantes de 7 a 12 años.',
+      schedule: 'Lunes y Miércoles 2:00-3:30pm',
+      teacherId: yovanny.id,
       maxCapacity: 15,
       status: WorkshopStatus.ACTIVE,
-      ageGroup: '9-12 años',
+      ageGroup: '7-12 años',
     },
   })
-  console.log(`✔ Talleres creados: ${workshop1.name}, ${workshop2.name}`)
 
-  // ─── Matrículas ───────────────────────────────────────────────────────────
-  await prisma.enrollment.upsert({
-    where: { studentId_workshopId: { studentId: student1.id, workshopId: workshop1.id } },
+  const workshopLectura = await prisma.workshop.upsert({
+    where: { id: 'workshop-lectura' },
     update: {},
-    create: { studentId: student1.id, workshopId: workshop1.id },
+    create: {
+      id: 'workshop-lectura',
+      name: 'Lectura y Escritura',
+      description: 'Fortalecimiento de competencias lectoras y de escritura para niños de 6 a 10 años.',
+      schedule: 'Martes y Jueves 2:00-3:30pm',
+      teacherId: eiverson.id,
+      maxCapacity: 15,
+      status: WorkshopStatus.ACTIVE,
+      ageGroup: '6-10 años',
+    },
   })
-  await prisma.enrollment.upsert({
-    where: { studentId_workshopId: { studentId: student2.id, workshopId: workshop2.id } },
+
+  const workshopArte = await prisma.workshop.upsert({
+    where: { id: 'workshop-arte' },
     update: {},
-    create: { studentId: student2.id, workshopId: workshop2.id },
+    create: {
+      id: 'workshop-arte',
+      name: 'Arte y Cultura',
+      description: 'Expresión artística y cultural para todos los estudiantes del CERIC.',
+      schedule: 'Viernes 2:00-5:00pm',
+      teacherId: yovanny.id,
+      maxCapacity: 20,
+      status: WorkshopStatus.ACTIVE,
+      ageGroup: 'Todos',
+    },
   })
-  await prisma.enrollment.upsert({
-    where: { studentId_workshopId: { studentId: student3.id, workshopId: workshop1.id } },
-    update: {},
-    create: { studentId: student3.id, workshopId: workshop1.id },
-  })
-  console.log(`✔ Matrículas creadas`)
+
+  console.log(`✔ 3 talleres creados`)
+
+  // ─── Inscripciones ─────────────────────────────────────────────────────────
+  // Refuerzo Matemáticas: Sofía, Juan, Miguel, Valentina
+  for (const studentId of [sofia.id, juan.id, miguel.id, valentina.id]) {
+    await prisma.enrollment.upsert({
+      where: { studentId_workshopId: { studentId, workshopId: workshopMatematicas.id } },
+      update: {},
+      create: { studentId, workshopId: workshopMatematicas.id },
+    })
+  }
+
+  // Lectura y Escritura: Juan, Camila, Andrés
+  for (const studentId of [juan.id, camila.id, andres.id]) {
+    await prisma.enrollment.upsert({
+      where: { studentId_workshopId: { studentId, workshopId: workshopLectura.id } },
+      update: {},
+      create: { studentId, workshopId: workshopLectura.id },
+    })
+  }
+
+  // Arte y Cultura: todos los 6
+  for (const studentId of [sofia.id, juan.id, valentina.id, miguel.id, camila.id, andres.id]) {
+    await prisma.enrollment.upsert({
+      where: { studentId_workshopId: { studentId, workshopId: workshopArte.id } },
+      update: {},
+      create: { studentId, workshopId: workshopArte.id },
+    })
+  }
+
+  console.log(`✔ Inscripciones creadas`)
 
   // ─── Asistencias ──────────────────────────────────────────────────────────
   const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
 
-  await prisma.attendance.createMany({
-    skipDuplicates: true,
-    data: [
-      { studentId: student1.id, workshopId: workshop1.id, date: yesterday, status: AttendanceStatus.PRESENT },
-      { studentId: student2.id, workshopId: workshop2.id, date: yesterday, status: AttendanceStatus.ABSENT },
-      { studentId: student3.id, workshopId: workshop1.id, date: yesterday, status: AttendanceStatus.LATE },
-    ],
-  })
-  console.log(`✔ Asistencias creadas`)
+  function pastWeekday(daysAgo: number): Date {
+    const d = new Date(today)
+    d.setDate(d.getDate() - daysAgo)
+    d.setHours(14, 0, 0, 0)
+    return d
+  }
 
-  // ─── Reportes de progreso ─────────────────────────────────────────────────
-  await prisma.progressReport.create({
-    data: {
-      studentId: student1.id,
-      workshopId: workshop1.id,
-      period: 'Primer semestre 2024',
-      rating: ProgressRating.EXCELLENT,
-      notes: 'Sofía demuestra excelente comprensión lectora y participa activamente en todas las actividades.',
-      createdBy: teacherPlatform.id,
-    },
-  })
+  // Últimos 4 días hábiles para Refuerzo Matemáticas y Lectura
+  const workdays = [1, 2, 3, 4].map(pastWeekday)
 
-  await prisma.progressReport.create({
-    data: {
-      studentId: student2.id,
-      workshopId: workshop2.id,
-      period: 'Primer semestre 2024',
-      rating: ProgressRating.IN_PROGRESS,
-      notes: 'Andrés muestra progreso gradual. Se recomienda refuerzo en multiplicación y división.',
-      createdBy: teacherPlatform.id,
-    },
-  })
-  console.log(`✔ Reportes de progreso creados`)
+  const mathStudents = [sofia.id, juan.id, miguel.id, valentina.id]
+  const readStudents = [juan.id, camila.id, andres.id]
+  const allStudents = [sofia.id, juan.id, valentina.id, miguel.id, camila.id, andres.id]
+
+  const statuses = [AttendanceStatus.PRESENT, AttendanceStatus.ABSENT, AttendanceStatus.LATE, AttendanceStatus.PRESENT]
+
+  for (let i = 0; i < workdays.length; i++) {
+    for (const studentId of mathStudents) {
+      try {
+        await prisma.attendance.create({
+          data: {
+            studentId,
+            workshopId: workshopMatematicas.id,
+            date: workdays[i],
+            status: statuses[i % statuses.length],
+          },
+        })
+      } catch { /* skip duplicates */ }
+    }
+
+    for (const studentId of readStudents) {
+      try {
+        await prisma.attendance.create({
+          data: {
+            studentId,
+            workshopId: workshopLectura.id,
+            date: workdays[i],
+            status: statuses[(i + 1) % statuses.length],
+          },
+        })
+      } catch { /* skip duplicates */ }
+    }
+  }
+
+  // Últimos 2 viernes para Arte y Cultura
+  const lastFridays: Date[] = []
+  let check = new Date(today)
+  while (lastFridays.length < 2) {
+    check.setDate(check.getDate() - 1)
+    if (check.getDay() === 5) {
+      const d = new Date(check)
+      d.setHours(14, 0, 0, 0)
+      lastFridays.push(d)
+    }
+  }
+
+  for (const friday of lastFridays) {
+    for (const studentId of allStudents) {
+      try {
+        await prisma.attendance.create({
+          data: {
+            studentId,
+            workshopId: workshopArte.id,
+            date: friday,
+            status: AttendanceStatus.PRESENT,
+          },
+        })
+      } catch { /* skip duplicates */ }
+    }
+  }
+
+  console.log(`✔ Asistencias de los últimos días creadas`)
 
   // ─── Observaciones ────────────────────────────────────────────────────────
-  const obs1 = await prisma.observation.create({
-    data: {
-      studentId: student2.id,
-      createdBy: teacherSchool.id,
+  // Obs 1 - PENDING
+  await prisma.observation.upsert({
+    where: { id: 'obs-001' },
+    update: {},
+    create: {
+      id: 'obs-001',
+      studentId: sofia.id,
+      createdBy: carlosMartinez.id,
       subjectArea: 'Matemáticas',
       difficultyType: 'Académica',
-      description: 'El estudiante presenta dificultades persistentes en la resolución de problemas con fracciones y decimales. Ha reprobado los últimos dos quizzes.',
+      description:
+        'Sofía presenta dificultades con las operaciones de multiplicación y división. No logra resolver ejercicios básicos de manera autónoma.',
       urgencyLevel: UrgencyLevel.PRIORITY,
-      recommendation: 'Se sugiere sesiones de refuerzo individualizadas y comunicación con el acudiente.',
       status: ObservationStatus.PENDING,
     },
   })
 
-  const obs2 = await prisma.observation.create({
-    data: {
-      studentId: student3.id,
-      createdBy: teacherSchool.id,
-      subjectArea: 'General',
-      difficultyType: 'Asistencia',
-      description: 'Valentina ha faltado 8 días en el último mes sin justificación. Se han enviado comunicados al acudiente sin respuesta.',
-      urgencyLevel: UrgencyLevel.URGENT,
-      recommendation: 'Contacto urgente con acudiente. Posible visita domiciliaria.',
+  // Obs 2 - IN_PROGRESS
+  const obs2 = await prisma.observation.upsert({
+    where: { id: 'obs-002' },
+    update: {},
+    create: {
+      id: 'obs-002',
+      studentId: valentina.id,
+      createdBy: anaRuiz.id,
+      subjectArea: 'Lectura y Escritura',
+      difficultyType: 'Académica',
+      description:
+        'Valentina tiene dificultades para comprender textos largos y hacer inferencias. Su nivel de lectura está por debajo del grado.',
+      urgencyLevel: UrgencyLevel.NORMAL,
       status: ObservationStatus.IN_PROGRESS,
     },
   })
 
-  await prisma.observation.create({
-    data: {
-      studentId: student1.id,
-      createdBy: teacherSchool.id,
-      subjectArea: 'Convivencia',
-      difficultyType: 'Comportamental',
-      description: 'Sofía presentó una discusión con compañeros durante el recreo. Fue mediada y resuelta satisfactoriamente.',
-      urgencyLevel: UrgencyLevel.NORMAL,
+  await prisma.observationAction.upsert({
+    where: { id: 'obs-002-action' },
+    update: {},
+    create: {
+      id: 'obs-002-action',
+      observationId: obs2.id,
+      createdBy: anaRuiz.id,
+      actionPlan:
+        'Se trabajará comprensión lectora en el taller de Lectura y Escritura con ejercicios graduados. Inicio inmediato.',
+    },
+  })
+
+  // Obs 3 - RESOLVED
+  const obs3 = await prisma.observation.upsert({
+    where: { id: 'obs-003' },
+    update: {},
+    create: {
+      id: 'obs-003',
+      studentId: miguel.id,
+      createdBy: carlosMartinez.id,
+      subjectArea: 'Comportamiento',
+      difficultyType: 'Conductual',
+      description:
+        'Miguel presenta comportamiento agresivo con compañeros durante el recreo. Ha tenido tres incidentes esta semana.',
+      urgencyLevel: UrgencyLevel.URGENT,
       status: ObservationStatus.RESOLVED,
     },
   })
-  console.log(`✔ Observaciones creadas`)
 
-  // ─── Acciones y seguimientos ─────────────────────────────────────────────
-  await prisma.observationAction.create({
-    data: {
-      observationId: obs2.id,
-      createdBy: teacherPlatform.id,
-      actionPlan: 'Se programó llamada con la acudiente María López para el próximo lunes. Se coordina con la trabajadora social del colegio para visita domiciliaria si no hay respuesta.',
-    },
-  })
-
-  await prisma.observationFollowup.create({
-    data: {
-      observationId: obs2.id,
-      createdBy: teacherPlatform.id,
-      note: 'Llamada realizada sin contestar. Se dejó mensaje de voz. Se enviará comunicado físico al colegio.',
-    },
-  })
-  console.log(`✔ Acciones y seguimientos creados`)
-
-  // ─── Notificaciones ───────────────────────────────────────────────────────
-  await prisma.notification.createMany({
-    data: [
-      {
-        userId: guardian.id,
-        type: NotificationType.REPORT_AVAILABLE,
-        message: 'Nuevo informe de progreso disponible para Sofía López - Primer semestre 2024',
-        read: false,
-      },
-      {
-        userId: guardian.id,
-        type: NotificationType.ABSENCE_REGISTERED,
-        message: 'Se registró una inasistencia para Andrés Martínez el día de ayer en Taller de Matemáticas',
-        read: false,
-      },
-      {
-        userId: teacherPlatform.id,
-        type: NotificationType.OBSERVATION_CREATED,
-        message: 'Nueva observación urgente creada para Valentina Torres por Carlos Ramírez',
-        read: false,
-      },
-      {
-        userId: teacherSchool.id,
-        type: NotificationType.OBSERVATION_ACTION,
-        message: 'Se registró un plan de acción para la observación de Valentina Torres',
-        read: true,
-      },
-    ],
-  })
-  console.log(`✔ Notificaciones creadas`)
-
-  // ─── Configuración del sitio ──────────────────────────────────────────────
-  await prisma.siteConfig.upsert({
-    where: { key: 'platform_name' },
+  await prisma.observationAction.upsert({
+    where: { id: 'obs-003-action' },
     update: {},
     create: {
-      key: 'platform_name',
-      value: 'Plataforma Digital CERIC',
-      updatedBy: teacherPlatform.id,
+      id: 'obs-003-action',
+      observationId: obs3.id,
+      createdBy: carlosMartinez.id,
+      actionPlan:
+        'Se realizaron sesiones de manejo de emociones y convivencia. Se habló con el acudiente.',
     },
   })
 
-  await prisma.siteConfig.upsert({
-    where: { key: 'institution_name' },
+  await prisma.observationFollowup.upsert({
+    where: { id: 'obs-003-followup' },
     update: {},
     create: {
-      key: 'institution_name',
-      value: 'Kennedy Cantonera',
-      updatedBy: teacherPlatform.id,
+      id: 'obs-003-followup',
+      observationId: obs3.id,
+      createdBy: carlosMartinez.id,
+      note: 'Miguel muestra mejora notable. No ha habido incidentes en dos semanas.',
     },
   })
-  console.log(`✔ Configuración del sitio creada`)
 
-  console.log('\n✅ Seed completado exitosamente')
-  console.log('\nCredenciales de acceso:')
-  console.log('  Admin:    admin@ceric.edu.co      / Ceric2024*')
-  console.log('  Docente:  docente@kennedy.edu.co  / Ceric2024*')
-  console.log('  Acudiente: acudiente@example.com  / Ceric2024*')
+  await prisma.observationFollowup.upsert({
+    where: { id: 'obs-003-close' },
+    update: {},
+    create: {
+      id: 'obs-003-close',
+      observationId: obs3.id,
+      createdBy: admin.id,
+      note: 'Situación resuelta satisfactoriamente. Se recomienda seguimiento mensual.',
+    },
+  })
+
+  console.log(`✔ 3 observaciones creadas`)
+
+  // ─── Historial de estados de estudiantes ─────────────────────────────────
+  await prisma.studentStatusHistory.upsert({
+    where: { id: 'hist-andres-1' },
+    update: {},
+    create: {
+      id: 'hist-andres-1',
+      studentId: andres.id,
+      previousStatus: StudentStatus.ACTIVE,
+      newStatus: StudentStatus.FOLLOW_UP,
+      note: 'Andrés ha faltado 4 veces en el último mes. Se requiere seguimiento con la familia.',
+      changedBy: admin.id,
+    },
+  })
+
+  await prisma.studentStatusHistory.upsert({
+    where: { id: 'hist-camila-1' },
+    update: {},
+    create: {
+      id: 'hist-camila-1',
+      studentId: camila.id,
+      previousStatus: StudentStatus.ACTIVE,
+      newStatus: StudentStatus.FOLLOW_UP,
+      note: 'Situación familiar difícil. Asistencia irregular.',
+      changedBy: admin.id,
+    },
+  })
+
+  await prisma.studentStatusHistory.upsert({
+    where: { id: 'hist-camila-2' },
+    update: {},
+    create: {
+      id: 'hist-camila-2',
+      studentId: camila.id,
+      previousStatus: StudentStatus.FOLLOW_UP,
+      newStatus: StudentStatus.ACTIVE,
+      note: 'Situación familiar estabilizada. Camila retomó asistencia regular.',
+      changedBy: yovanny.id,
+    },
+  })
+
+  console.log(`✔ Historial de estados creado`)
+
+  // ─── SiteConfig ───────────────────────────────────────────────────────────
+  const siteConfigs = [
+    { key: 'bank_name', value: 'Bancolombia' },
+    { key: 'bank_account_type', value: 'Cuenta de Ahorros' },
+    { key: 'bank_account_number', value: '123-456789-12' },
+    { key: 'bank_account_holder', value: 'CERIC Kennedy Cantonera' },
+    { key: 'bank_account_doc', value: '900.123.456-7' },
+    {
+      key: 'bank_custom_message',
+      value:
+        'Una vez realices la transferencia, escríbenos al correo con tu comprobante y te confirmaremos la recepción.',
+    },
+    { key: 'bank_contact_email', value: 'donaciones@ceric.edu.co' },
+    {
+      key: 'site_testimonial_text',
+      value:
+        'El CERIC cambió mi tarde. Antes no entendía las matemáticas y ahora soy de los mejores de mi clase.',
+    },
+    { key: 'site_testimonial_author', value: 'Estudiante, 11 años' },
+  ]
+
+  for (const cfg of siteConfigs) {
+    await prisma.siteConfig.upsert({
+      where: { key: cfg.key },
+      update: { value: cfg.value },
+      create: { key: cfg.key, value: cfg.value, updatedBy: admin.id },
+    })
+  }
+
+  console.log(`✔ SiteConfig inicial creado`)
+
+  console.log('\n✅ Seed completado exitosamente.')
+  console.log('\n📋 Credenciales de prueba:')
+  console.log('  Admin CERIC          → admin@ceric.edu.co         / CERIC_Admin_2024!')
+  console.log('  Yovanny González     → yovanny@ceric.edu.co       / Test1234!')
+  console.log('  Eiverson Moreno      → eiverson@ceric.edu.co      / Test1234!')
+  console.log('  Carlos Martínez      → carlos@iekennedy.edu.co    / Test1234!')
+  console.log('  Ana Ruiz             → ana@iecandelaria.edu.co    / Test1234!')
+  console.log('  María López          → maria.lopez@gmail.com      / Test1234!')
+  console.log('  Pedro Gómez          → pedro.gomez@gmail.com      / Test1234!')
+  console.log('  Lucía Torres         → lucia.torres@gmail.com     / Test1234!')
+  console.log('  José Ramírez         → acudiente.5544332211@ceric.edu.co / Test1234!')
 }
 
 main()
   .catch((e) => {
-    console.error('Error durante el seed:', e)
+    console.error('❌ Error en seed:', e)
     process.exit(1)
   })
   .finally(async () => {
